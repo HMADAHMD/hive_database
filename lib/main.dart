@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_tutorial/Notes.dart';
+import 'package:hive_tutorial/boxes.dart';
 import 'package:path_provider/path_provider.dart';
 
 void main() async {
@@ -31,56 +32,84 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+final titleController = TextEditingController();
+final descriptionController = TextEditingController();
+
 class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           "Hive Database",
           style: TextStyle(fontSize: 23),
         ),
         backgroundColor: Colors.green,
         elevation: 0,
       ),
-      body: FutureBuilder(
-          future: Hive.openBox('hammad'),
-          builder: (context, snapshot) {
-            return Column(
-              children: [
-                Card(
-                    child: ListTile(
-                  title: Text(snapshot.data!.get('age').toString()),
-                  trailing: IconButton(
-                      onPressed: () {
-                        setState(() {
-                          snapshot.data!.put('age', 24);
-                        });
-                      },
-                      icon: Icon(Icons.edit)),
-                )),
-                Card(
-                    child: ListTile(
-                        title: Text(snapshot.data!.get('gender').toString()))),
-              ],
-            );
-          }),
+      body: Column(
+        children: [],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          var box = await Hive.openBox('hammad');
-          var cube = await Hive.openBox('wishes');
-          cube.put('duaa', {
-            'kash': 'esa hojata',
-            'kaash': 'esa bhi hojata',
-            'kassh': 'ye bhi hojata',
-          });
-          box.put('age', 25);
-          box.put('gender', 'male');
-          print(box.get('age'));
-          print(cube.get('duaa')['kaash']);
+          myDialogue(context);
+          print('button pressed');
         },
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ),
     );
   }
+}
+
+Future myDialogue(BuildContext context) async {
+  return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Put it in"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                decoration: InputDecoration(
+                    //fillColor: Colors.green[100],
+                    border: UnderlineInputBorder(),
+                    hintText: 'Title'),
+              ),
+              TextField(
+                controller: descriptionController,
+                decoration: InputDecoration(
+                    fillColor: Colors.green[100],
+                    border: UnderlineInputBorder(),
+                    hintText: 'Description'),
+              )
+            ],
+          ),
+          actions: [
+            TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('Cancel')),
+            TextButton(
+                style: TextButton.styleFrom(backgroundColor: Colors.green),
+                onPressed: () {
+                  final data = Notes(
+                      title: titleController.text,
+                      description: descriptionController.text);
+                  final box = Boxes.getdata();
+                  box.add(data);
+                  data.save();
+                  titleController.clear();
+                  descriptionController.clear();
+                  Navigator.pop(context);
+                },
+                child: const Text(
+                  "Add",
+                  style: TextStyle(color: Colors.white),
+                ))
+          ],
+        );
+      });
 }
