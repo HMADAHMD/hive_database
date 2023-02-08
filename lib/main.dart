@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:hive_tutorial/Notes.dart';
 import 'package:hive_tutorial/boxes.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:hive_tutorial/functions.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +34,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
+Fucntions myfunction = Fucntions();
 final titleController = TextEditingController();
 final descriptionController = TextEditingController();
 
@@ -41,18 +44,72 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Hive Database",
+          "ToDo",
           style: TextStyle(fontSize: 23),
         ),
         backgroundColor: Colors.green,
         elevation: 0,
       ),
-      body: Column(
-        children: [],
-      ),
+      body: ValueListenableBuilder<Box<Notes>>(
+          valueListenable: Boxes.getdata().listenable(),
+          builder: (context, box, _) {
+            var data = box.values.toList().cast<Notes>();
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+              child: ListView.builder(
+                  itemCount: box.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10.0, horizontal: 10),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  data[index].title.toString(),
+                                  style: const TextStyle(fontSize: 20),
+                                ),
+                                Spacer(),
+                                InkWell(
+                                    onTap: () {
+                                      delete(data[index]);
+                                    },
+                                    child: Icon(Icons.delete)),
+                                const SizedBox(
+                                  width: 15,
+                                ),
+                                InkWell(
+                                    onTap: () {
+                                      myfunction.update(
+                                          data[index],
+                                          data[index].title.toString(),
+                                          data[index].description.toString(),
+                                          context);
+                                    },
+                                    child: Icon(Icons.edit)),
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            Text(
+                              data[index].description.toString(),
+                              style: const TextStyle(fontSize: 15),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+            );
+          }),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          myDialogue(context);
+          myfunction.myDialogue(context);
           print('button pressed');
         },
         child: const Icon(Icons.add),
@@ -61,55 +118,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-Future myDialogue(BuildContext context) async {
-  return showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("Put it in"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: InputDecoration(
-                    //fillColor: Colors.green[100],
-                    border: UnderlineInputBorder(),
-                    hintText: 'Title'),
-              ),
-              TextField(
-                controller: descriptionController,
-                decoration: InputDecoration(
-                    fillColor: Colors.green[100],
-                    border: UnderlineInputBorder(),
-                    hintText: 'Description'),
-              )
-            ],
-          ),
-          actions: [
-            TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text('Cancel')),
-            TextButton(
-                style: TextButton.styleFrom(backgroundColor: Colors.green),
-                onPressed: () {
-                  final data = Notes(
-                      title: titleController.text,
-                      description: descriptionController.text);
-                  final box = Boxes.getdata();
-                  box.add(data);
-                  data.save();
-                  titleController.clear();
-                  descriptionController.clear();
-                  Navigator.pop(context);
-                },
-                child: const Text(
-                  "Add",
-                  style: TextStyle(color: Colors.white),
-                ))
-          ],
-        );
-      });
+void delete(Notes notes) async {
+  await notes.delete();
 }
